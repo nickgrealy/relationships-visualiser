@@ -12,19 +12,19 @@ components:
 
   - type: machine
     id: server1.domain.au
-    name: Docker Server
+    name: DigitalOcean Droplet
     memberOf:
       - vpc1.domain.au
 
-  - type: group
-    name: Web Services
+  - type: service
+    name: Docker
     id: web_services
     memberOf:
       - server1.domain.au
 
-  - type: service
-    name: Create Case
-    id: ws_create_case
+  - type: container
+    name: Case Management
+    id: ws.casemgmt
     memberOf:
       - web_services
     links:
@@ -34,16 +34,31 @@ components:
         direction: in
       - name: bau.case_completed
         direction: both
+      - name: mongo.onepass.cases
+        direction: out
+      - name: mongo.onepass.forms
+        direction: out
+
+  - type: container
+    name: Auth Module
+    id: ws.accessctrl
+    memberOf:
+      - web_services
+    links:
+      - name: bau.create_case
+        direction: out
+      - name: mongo.onepass.users
+        direction: out
 
   # --- MQ ---
 
   - type: machine
-    name: MQ Machine
+    name: AWS EC2
     id: server2.domain.au
     memberOf:
       - vpc1.domain.au
 
-  - type: service
+  - type: message-broker
     name: MQ Server
     id: mq1.domain.au
     memberOf:
@@ -77,6 +92,38 @@ components:
     memberOf:
       - mq1.domain.au
       - mq_case_services
+
+  # --- Database ---
+
+  - type: machine
+    name: Atlas MongoDb
+    id: mongo-cluster-123.mongodb.com
+    memberOf:
+      - vpc1.domain.au
+
+  - type: database
+    name: onepass
+    id: mongo.onepass
+    memberOf:
+      - mongo-cluster-123.mongodb.com
+
+  - type: collection
+    name: users
+    id: mongo.onepass.users
+    memberOf:
+      - mongo.onepass
+
+  - type: collection
+    name: cases
+    id: mongo.onepass.cases
+    memberOf:
+      - mongo.onepass
+
+  - type: collection
+    name: forms
+    id: mongo.onepass.forms
+    memberOf:
+      - mongo.onepass
 `
 
 const content = yaml.load(ymlData)
@@ -116,10 +163,15 @@ const LINKS = content.components.reduce((prev, curr) => {
   return prev
 }, [])
 
+const MAP_TYPES_TRUE = Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, true]))
+const MAP_TYPES_FALSE = Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, false]))
+
 module.exports = {
   content,
   ROOT_LEVEL_COMPONENTS,
   LINKS,
   MAP_BY_MEMBER_OF,
-  MAP_TYPE_TO_COUNT
+  MAP_TYPE_TO_COUNT,
+  MAP_TYPES_TRUE,
+  MAP_TYPES_FALSE
 }

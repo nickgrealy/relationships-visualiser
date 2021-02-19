@@ -1,9 +1,13 @@
+/**
+ * Contains all theme and styling configuration.
+ */
 
 const radius = '6px'
 const titleHeight = '30px'
 const awsGold = '#DBAC47'
 const awsDarkGold = '#9D7B32'
 const awsOrange = '#FD9601'
+const awsMidOrange = '#ED7211'
 const awsDarkOrange = '#C9531A'
 const awsGreen = '#6AAC3D'
 const awsDarkGreen = '#1D680F'
@@ -23,6 +27,7 @@ export default {
   awsGold,
   awsDarkGold,
   awsOrange,
+  awsMidOrange,
   awsDarkOrange,
   awsGreen,
   awsDarkGreen,

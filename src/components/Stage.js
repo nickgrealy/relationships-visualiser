@@ -4,10 +4,11 @@ import styled from 'styled-components'
 import {
   LINKS,
   MAP_BY_MEMBER_OF, ROOT_LEVEL_COMPONENTS
-} from '../components/content'
+} from './ComponentDataYaml'
 import { DirectionalLine } from '../components/DirectionalLine'
 import THEME from '../components/Theme'
 import { Flex } from './Flex'
+import { throttle } from 'throttle-debounce'
 
 // styles
 
@@ -39,7 +40,7 @@ background:white;
     }
 }
 
-&.react-draggable {
+&.draggable-true {
   cursor: pointer;
 }
 
@@ -85,27 +86,59 @@ background:white;
     color: white;
   }
 }
-&.type-service {
+
+// store children vertically
+&.type-service, 
+&.type-message-broker, 
+&.type-database {
   display:flex;
   flex-direction:column;
 }
-&.type-queue {
-  padding:0px;
-  border-radius:0px;
-  background: linear-gradient(${THEME.awsBlue}, ${THEME.awsDarkBlue});
+
+// stack elements vertically
+&.type-queue,
+&.type-container,
+&.type-database &.type-collection {
+  padding:0px !important;
+  border-radius:0px !important;
   > .title {
-    color:white;
-    background:transparent;
-    border-width:0px;
-    position:relative !important;
+    border-radius:0px !important;
+    border-width:0px !important;
+    position:initial !important;
   }
   &:nth-child(n+2) {
     margin-top:-1px;
   }
 }
+
+// custom styling
+&.type-message-broker {
+  background: linear-gradient(${THEME.awsBlue}, ${THEME.awsDarkBlue});
+  > .title {
+    color:white;
+    background:transparent;
+  }
+}
+&.type-container {
+  background: linear-gradient(${THEME.awsRed}, ${THEME.awsDarkRed});
+  > .title {
+    color:white;
+    background:transparent;
+  }
+}
+&.type-database {
+  > .title {
+    background: linear-gradient(${THEME.awsGreen}, ${THEME.awsDarkGreen}) !important;
+    color:white;
+    background:transparent;
+  }
+}
 `
 
-const DrawComp = ({ comp = null, depth = 0, togglableTypes = {}, draggableTypes = {}, ...draggableProps }) => {
+/**
+ * Draws a component, and recursively draws it's children.
+ */
+const DrawComp = React.memo(({ comp = null, depth = 0, togglableTypes = {}, draggableTypes = {}, ...draggableProps }) => {
   if (depth > 10) return null
   const isVisible = togglableTypes[comp.type]
   const component = <Comp id={comp.id} name={`${comp.name} (${comp.type})`} className={`type-${comp.type} visible-${isVisible}`}>
@@ -115,21 +148,31 @@ const DrawComp = ({ comp = null, depth = 0, togglableTypes = {}, draggableTypes 
       return <DrawComp key={child.id} comp={child} depth={depth + 1} togglableTypes={togglableTypes} draggableTypes={draggableTypes} {...draggableProps} />
     })}
   </Comp>
-  console.log('draggableTypes #3', draggableTypes)
-  return draggableTypes[comp.type] === true ? (<Draggable {...draggableProps}>{component}</Draggable>) : (component)
-}
+  console.debug('draggableTypes #3', draggableTypes)
+  const isDraggable = draggableTypes[comp.type]
+  return <Draggable
+      disabled={!isDraggable}
+      defaultClassName={`draggable-${isDraggable}`}
+      {...draggableProps}
+    >
+      {component}
+    </Draggable>
+})
 
 /**
- *
+ * The stage area; for presenting components.
  */
 const Stage = ({ togglableTypes = {}, draggableTypes = {} }) => {
-  console.log('draggableTypes #2', draggableTypes)
-
   const [rootLevelComponents] = React.useState(ROOT_LEVEL_COMPONENTS)
   const [links, setLinks] = React.useState(LINKS)
 
-  const redrawLines = () => setLinks([...links])
+  // a function to facilitate redrawing lines (e.g. when boxes are moved)
+  const redrawLines = React.useCallback(throttle(20, false, () => {
+    setLinks(x => ([...x]))
+  }), [])
 
+  // redraw the lines, if the window is resizes (e.g. if boxes are moved)
+  // todo: redraw lines on scroll?
   React.useEffect(() => {
     window.addEventListener('resize', redrawLines)
     return () => { window.removeEventListener('resize', redrawLines) }
@@ -138,17 +181,17 @@ const Stage = ({ togglableTypes = {}, draggableTypes = {} }) => {
   return (
     <Flex flex="growchild grow" style={{ padding: '30px', background: THEME.awsGreyBackground }}>
 
-      {/* draw boxes */}
+      {/* recursively draw components */}
       { rootLevelComponents.map(root => <DrawComp
         key={root.id}
         comp={root}
-        // onDrag={redrawLines} // warning: this redraws the components on every move - not efficient! is the redraw because of the drag? ideally should not be redrawing.
+        onDrag={redrawLines}
         onStop={redrawLines}
         togglableTypes={togglableTypes}
         draggableTypes={draggableTypes}
       />)}
 
-      {/* draw arrows */}
+      {/* draw directional links between components */}
       { links.map(link => <DirectionalLine key={`${link.from}-${link.to}-${link.direction}`} {...link} />) }
 
     </Flex>

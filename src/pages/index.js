@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Flex } from '../components/Flex'
 import Stage from '../components/Stage'
-import { MAP_TYPE_TO_COUNT } from '../components/content'
+import { MAP_TYPES_TRUE, MAP_TYPES_FALSE } from '../components/ComponentDataYaml'
 import Button from '../components/Button'
 import styled from 'styled-components'
 import './style.css'
@@ -19,10 +19,11 @@ const Tick = styled(props => <span {...props}>&#9745;</span>)`font-size:20px;mar
 const Notick = styled(props => <span {...props}>&#9744;</span>)`font-size:20px;margin-left:20px;`
 
 const ToggleButtons = ({ object, setObject }) => {
-  return Object.entries(object).map(([k, v]) => {
+  return Object.keys(object).sort().map(k => {
+    const v = object[k]
     return <Button
         key={k}
-        className={`${v ? 'orange' : ''} align-right`}
+        className={`${v ? 'colour-orange' : ''} space-between`}
         onClick={() => setObject({ ...object, [k]: !v })}>
           {k} {v ? <Tick /> : <Notick />}
       </Button>
@@ -30,11 +31,16 @@ const ToggleButtons = ({ object, setObject }) => {
 }
 
 /**
- *
+ * Creates the landing page.
  */
 const IndexPage = () => {
-  const [togglableTypes, setTogglableTypes] = React.useState(Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, true])))
-  const [draggableTypes, setDraggableTypes] = React.useState(Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, false])))
+  const [togglableTypes, setTogglableTypes] = React.useState({ ...MAP_TYPES_TRUE })
+  const [draggableTypes, setDraggableTypes] = React.useState({ ...MAP_TYPES_FALSE })
+
+  React.useEffect(() => {
+    console.log(draggableTypes)
+    if (draggableTypes.machine !== true) setDraggableTypes(t => ({ ...t, machine: true }))
+  }, [])
 
   return <Flex className="grow">
     <Sidebar>

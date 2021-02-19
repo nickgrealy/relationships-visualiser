@@ -3,6 +3,11 @@ import styled from 'styled-components'
 
 // styles
 
+/**
+ * A convenience element for creating flex boxes.
+ * @example
+ * <Flex className="growchild row col grow border" >...</Flex>
+ */
 export const Flex = styled(({ className = '', flex = '', ...props }) => <div className={`${flex} ${className}`} {...props} />)`
   display: flex;
   &.growchild > * {
