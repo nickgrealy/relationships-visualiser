@@ -15,6 +15,7 @@ const awsPurple = '#8E59EC'
 const awsDarkPurple = '#5C32B7'
 const awsRed = '#E05243'
 const awsDarkRed = '#8C3123'
+const awsGreyBackground = '#F2F3F3'
 
 export default {
   radius,
@@ -32,5 +33,6 @@ export default {
   awsPurple,
   awsDarkPurple,
   awsRed,
-  awsDarkRed
+  awsDarkRed,
+  awsGreyBackground
 }

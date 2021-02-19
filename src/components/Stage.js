@@ -9,9 +9,6 @@ import { DirectionalLine } from '../components/DirectionalLine'
 import THEME from '../components/Theme'
 import { Flex } from './Flex'
 
-// user config
-const isTypeDraggable = { machine: true }
-
 // styles
 
 const Comp = styled.div`
@@ -108,25 +105,28 @@ background:white;
 }
 `
 
-const DrawComp = ({ comp = null, depth = 0, toggleTypes = {}, ...draggableProps }) => {
+const DrawComp = ({ comp = null, depth = 0, togglableTypes = {}, draggableTypes = {}, ...draggableProps }) => {
   if (depth > 10) return null
-  const isVisible = toggleTypes[comp.type]
+  const isVisible = togglableTypes[comp.type]
   const component = <Comp id={comp.id} name={`${comp.name} (${comp.type})`} className={`type-${comp.type} visible-${isVisible}`}>
     <div className="title">{comp.name} ({comp.type})</div>
     {/* draw child components */}
     { MAP_BY_MEMBER_OF[comp.id] && MAP_BY_MEMBER_OF[comp.id].map(child => {
-      return <DrawComp key={child.id} comp={child} depth={depth + 1} toggleTypes={toggleTypes} {...draggableProps} />
+      return <DrawComp key={child.id} comp={child} depth={depth + 1} togglableTypes={togglableTypes} draggableTypes={draggableTypes} {...draggableProps} />
     })}
   </Comp>
-  return isTypeDraggable[comp.type] === true ? (<Draggable {...draggableProps}>{component}</Draggable>) : (component)
+  console.log('draggableTypes #3', draggableTypes)
+  return draggableTypes[comp.type] === true ? (<Draggable {...draggableProps}>{component}</Draggable>) : (component)
 }
 
 /**
  *
  */
-const Stage = ({ toggleTypes = {} }) => {
-  const [links, setLinks] = React.useState(LINKS)
+const Stage = ({ togglableTypes = {}, draggableTypes = {} }) => {
+  console.log('draggableTypes #2', draggableTypes)
+
   const [rootLevelComponents] = React.useState(ROOT_LEVEL_COMPONENTS)
+  const [links, setLinks] = React.useState(LINKS)
 
   const redrawLines = () => setLinks([...links])
 
@@ -136,15 +136,16 @@ const Stage = ({ toggleTypes = {} }) => {
   })
 
   return (
-    <Flex flex="growchild grow" style={{ padding: '15px' }}>
+    <Flex flex="growchild grow" style={{ padding: '30px', background: THEME.awsGreyBackground }}>
 
       {/* draw boxes */}
       { rootLevelComponents.map(root => <DrawComp
         key={root.id}
         comp={root}
-        onDrag={redrawLines}
+        // onDrag={redrawLines} // warning: this redraws the components on every move - not efficient! is the redraw because of the drag? ideally should not be redrawing.
         onStop={redrawLines}
-        toggleTypes={toggleTypes}
+        togglableTypes={togglableTypes}
+        draggableTypes={draggableTypes}
       />)}
 
       {/* draw arrows */}
