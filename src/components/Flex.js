@@ -8,10 +8,20 @@ import styled from 'styled-components'
  * @example
  * <Flex className="growchild row col grow border" >...</Flex>
  */
-export const Flex = styled(({ className = '', flex = '', ...props }) => <div className={`${flex} ${className}`} {...props} />)`
+export const Flex = styled(({ className = '', innerRef = undefined, flex = '', ...props }) => {
+  console.debug('Flex', { flex, className, ...props })
+  return <div className={`${flex} ${className}`} ref={innerRef} {...props} />
+})`
   display: flex;
   &.growchild > * {
     flex: 1 1 auto;
+  }
+  &.scroll-y {
+    overflow-y: auto;
+  }
+  &.center {
+    align-items: center;
+    justify-content: center;
   }
   &.row {
     flex-direction: row;

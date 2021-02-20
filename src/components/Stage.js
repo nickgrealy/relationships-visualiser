@@ -1,14 +1,11 @@
 import * as React from 'react'
 import Draggable from 'react-draggable'
 import styled from 'styled-components'
-import {
-  LINKS,
-  MAP_BY_MEMBER_OF, ROOT_LEVEL_COMPONENTS
-} from './ComponentDataYaml'
 import { DirectionalLine } from '../components/DirectionalLine'
 import THEME from '../components/Theme'
 import { Flex } from './Flex'
 import { throttle } from 'throttle-debounce'
+import { isDef } from '../common/utils'
 
 // styles
 
@@ -88,17 +85,13 @@ background:white;
 }
 
 // store children vertically
-&.type-service, 
-&.type-message-broker, 
-&.type-database {
+&.vertical-children {
   display:flex;
   flex-direction:column;
 }
 
 // stack elements vertically
-&.type-queue,
-&.type-container,
-&.type-database &.type-collection {
+&.children-none {
   padding:0px !important;
   border-radius:0px !important;
   > .title {
@@ -112,44 +105,47 @@ background:white;
 }
 
 // custom styling
-&.type-message-broker {
-  background: linear-gradient(${THEME.awsBlue}, ${THEME.awsDarkBlue});
-  > .title {
-    color:white;
-    background:transparent;
-  }
-}
-&.type-container {
-  background: linear-gradient(${THEME.awsRed}, ${THEME.awsDarkRed});
-  > .title {
-    color:white;
-    background:transparent;
-  }
-}
-&.type-database {
-  > .title {
-    background: linear-gradient(${THEME.awsGreen}, ${THEME.awsDarkGreen}) !important;
-    color:white;
-    background:transparent;
-  }
-}
+// &.type-message-broker > .title {
+//   background: linear-gradient(${THEME.awsBlue}, ${THEME.awsDarkBlue});
+//   color:white;
+// }
+// &.type-container > .title {
+//   background: linear-gradient(${THEME.awsRed}, ${THEME.awsDarkRed});
+//   color:white;
+// }
+// &.type-database > .title {
+//   background: linear-gradient(${THEME.awsGreen}, ${THEME.awsDarkGreen});
+//   color:white;
+// }
 `
 
 /**
  * Draws a component, and recursively draws it's children.
  */
-const DrawComp = React.memo(({ comp = null, depth = 0, togglableTypes = {}, draggableTypes = {}, ...draggableProps }) => {
+const DrawComp = React.memo(({ components = {}, comp = null, depth = 0, visibleTypes = {}, draggableTypes = {}, columnLayoutTypes = {}, ...draggableProps }) => {
+  const { MAP_BY_MEMBER_OF = {} } = components
   if (depth > 10) return null
-  const isVisible = togglableTypes[comp.type]
-  const component = <Comp id={comp.id} name={`${comp.name} (${comp.type})`} className={`type-${comp.type} visible-${isVisible}`}>
+  const passDownProps = { components, visibleTypes, draggableTypes, columnLayoutTypes, ...draggableProps }
+  const isVisible = visibleTypes[comp.type]
+  const isDraggable = draggableTypes[comp.type]
+  const isColumnLayout = columnLayoutTypes[comp.type]
+  const children = MAP_BY_MEMBER_OF[comp.id] || []
+  const doChildrenHaveChildren = children.some(child => (MAP_BY_MEMBER_OF[child.id] || []).length > 0)
+  console.log(comp.name, isColumnLayout)
+  const isVerticalLayout = isDef(isColumnLayout) ? isColumnLayout : !doChildrenHaveChildren
+
+  const component = <Comp
+    id={comp.id}
+    name={`${comp.name} (${comp.type})`}
+    className={`type-${comp.type} visible-${isVisible} ${children.length === 0 ? 'children-none' : ''} ${isVerticalLayout ? 'vertical-children' : ''} `}
+  >
     <div className="title">{comp.name} ({comp.type})</div>
     {/* draw child components */}
-    { MAP_BY_MEMBER_OF[comp.id] && MAP_BY_MEMBER_OF[comp.id].map(child => {
-      return <DrawComp key={child.id} comp={child} depth={depth + 1} togglableTypes={togglableTypes} draggableTypes={draggableTypes} {...draggableProps} />
+    { children.map(child => {
+      return <DrawComp key={child.id} comp={child} depth={depth + 1} {...passDownProps} />
     })}
   </Comp>
   console.debug('draggableTypes #3', draggableTypes)
-  const isDraggable = draggableTypes[comp.type]
   return <Draggable
       disabled={!isDraggable}
       defaultClassName={`draggable-${isDraggable}`}
@@ -162,7 +158,8 @@ const DrawComp = React.memo(({ comp = null, depth = 0, togglableTypes = {}, drag
 /**
  * The stage area; for presenting components.
  */
-const Stage = ({ togglableTypes = {}, draggableTypes = {} }) => {
+const Stage = ({ components = {}, visibleTypes = {}, draggableTypes = {} }) => {
+  const { LINKS = [], ROOT_LEVEL_COMPONENTS = [] } = components
   const [rootLevelComponents] = React.useState(ROOT_LEVEL_COMPONENTS)
   const [links, setLinks] = React.useState(LINKS)
 
@@ -170,6 +167,11 @@ const Stage = ({ togglableTypes = {}, draggableTypes = {} }) => {
   const redrawLines = React.useCallback(throttle(20, false, () => {
     setLinks(x => ([...x]))
   }), [])
+
+  React.useEffect(() => {
+    console.log('LINKS COUNT', { prop: LINKS.length, state: links.length, LINKS })
+    setLinks(LINKS)
+  }, [LINKS])
 
   // redraw the lines, if the window is resizes (e.g. if boxes are moved)
   // todo: redraw lines on scroll?
@@ -184,10 +186,11 @@ const Stage = ({ togglableTypes = {}, draggableTypes = {} }) => {
       {/* recursively draw components */}
       { rootLevelComponents.map(root => <DrawComp
         key={root.id}
+        components={components}
         comp={root}
         onDrag={redrawLines}
         onStop={redrawLines}
-        togglableTypes={togglableTypes}
+        visibleTypes={visibleTypes}
         draggableTypes={draggableTypes}
       />)}
 

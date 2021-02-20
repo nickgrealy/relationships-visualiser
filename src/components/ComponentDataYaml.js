@@ -1,6 +1,6 @@
 const yaml = require('js-yaml')
 
-const ymlData = `
+const rawYamlString = `
 # other types: load_balancer, cluster, vpc, etc
 
 components:
@@ -126,52 +126,63 @@ components:
       - mongo.onepass
 `
 
-const content = yaml.load(ymlData)
-
 /**
- * All components that have no parents.
+ *
+ * @param {*} ymlString
  */
-const ROOT_LEVEL_COMPONENTS = content.components.filter(({ memberOf = [] }) => memberOf.length === 0)
+const parseYaml = ymlString => {
+  const jsonComponents = yaml.load(ymlString)
 
-/**
- * Map of parent.id to array of children.
- */
-const MAP_BY_MEMBER_OF = content.components.reduce((prev, curr) => {
-  const { memberOf = [] } = curr
-  memberOf.forEach(parent => { prev[parent] ? prev[parent].push(curr) : prev[parent] = [curr] })
-  return prev
-}, {})
+  /**
+   * All components that have no parents.
+   */
+  const ROOT_LEVEL_COMPONENTS = jsonComponents.components.filter(({ memberOf = [] }) => memberOf.length === 0)
 
-/**
- * Unique list of component types.
- */
-const MAP_TYPE_TO_COUNT = content.components.reduce((prev, curr) => {
-  prev[curr.type] = (prev[curr.type] || 0) + 1
-  return prev
-}, {})
+  /**
+   * Map of parent.id to array of children.
+   */
+  const MAP_BY_MEMBER_OF = jsonComponents.components.reduce((prev, curr) => {
+    const { memberOf = [] } = curr
+    memberOf.forEach(parent => { prev[parent] ? prev[parent].push(curr) : prev[parent] = [curr] })
+    return prev
+  }, {})
 
-/**
- * Array of objects, representing 'links' between objects.
- * @example
- * [{ from:'id1', to:'id2', direction:'in'}]
- */
-const LINKS = content.components.reduce((prev, curr) => {
-  const { links = [] } = curr
-  links.forEach(({ name, direction }) => {
-    prev.push({ from: curr.id, to: name, direction })
-  })
-  return prev
-}, [])
+  /**
+   * Unique list of component types.
+   */
+  const MAP_TYPE_TO_COUNT = jsonComponents.components.reduce((prev, curr) => {
+    prev[curr.type] = (prev[curr.type] || 0) + 1
+    return prev
+  }, {})
 
-const MAP_TYPES_TRUE = Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, true]))
-const MAP_TYPES_FALSE = Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, false]))
+  /**
+   * Array of objects, representing 'links' between objects.
+   * @example
+   * [{ from:'id1', to:'id2', direction:'in'}]
+   */
+  const LINKS = jsonComponents.components.reduce((prev, curr) => {
+    const { links = [] } = curr
+    links.forEach(({ name, direction }) => {
+      prev.push({ from: curr.id, to: name, direction })
+    })
+    return prev
+  }, [])
+
+  const MAP_TYPES_TRUE = Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, true]))
+  const MAP_TYPES_FALSE = Object.fromEntries(Object.keys(MAP_TYPE_TO_COUNT).map(k => [k, false]))
+
+  return {
+    jsonComponents,
+    ROOT_LEVEL_COMPONENTS,
+    LINKS,
+    MAP_BY_MEMBER_OF,
+    MAP_TYPE_TO_COUNT,
+    MAP_TYPES_TRUE,
+    MAP_TYPES_FALSE
+  }
+}
 
 module.exports = {
-  content,
-  ROOT_LEVEL_COMPONENTS,
-  LINKS,
-  MAP_BY_MEMBER_OF,
-  MAP_TYPE_TO_COUNT,
-  MAP_TYPES_TRUE,
-  MAP_TYPES_FALSE
+  rawYamlString,
+  parseYaml
 }

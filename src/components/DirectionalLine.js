@@ -58,5 +58,7 @@ export const DirectionalLine = ({ from, to, direction }) => {
         dashness={{ strokeLen: 10, nonStrokeLen: 3, animation: 1 }}
         color={THEME.awsDarkBlue}
         />
+  } else {
+    return null
   }
 }
