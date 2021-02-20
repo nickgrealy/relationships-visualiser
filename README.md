@@ -33,17 +33,18 @@ Yes, and...
   - [x] added validation on yaml and business structure
   - [x] support "cut down" components (e.g. just 'id')
   - [ ] save/load model from local storage 
-  - [ ] add a 'type' to links
+  - [ ] add a 'type' to links (why? colour? show text?)
 
-- Menu
-  - [ ] make it a table [type] [toggleView] [toggleDraggable] [flexdirection] [colour] [count]
-  - [ ] random assign colours
-  - [ ] store config
-  
-- Views
-  - [ ] save "named" views (e.g. positions & view)
+- Customisation
+  - [ ] assign random colours
+  - [ ] assign user chosen colours
   - [ ] custom backgrounds e.g. maps, to show geographical location
   - [ ] custom icons
+  - [ ] make it a table [type] [toggleView] [toggleDraggable] [flexdirection] [colour] [count]
+  - [ ] store configuration (local storage?)
+  
+- Named Views
+  - [ ] save "named" views (e.g. positions & view & zoom)
   - [ ] create dashboards (view fullscreen only)
   - [ ] ability to zoom in/out / slide / (for big worksites)
   
