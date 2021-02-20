@@ -45,6 +45,7 @@ Yes, and...
   
 - Named Views
   - [ ] save "named" views (e.g. positions & view & zoom)
+  - [ ] don't re-layout on window resize
   - [ ] create dashboards (view fullscreen only)
   - [ ] ability to zoom in/out / slide / (for big worksites)
   
