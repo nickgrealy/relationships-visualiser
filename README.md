@@ -59,6 +59,7 @@ Yes, and...
   - [ ] add to an existing model (json / curl)
 
 - Misc
+  - [x] if no children, then make single boxes stack vertically (overridable by [flexdirection])
   - [ ] fadeout/expire old components
   - [ ] ability to add metadata to objects (e.g. env config)
   - [ ] object highlighting on hover/select (fade out non-connected links)
@@ -68,7 +69,3 @@ Yes, and...
   - [ ] lines - link to left/right sides of boxes only (not top/bottom)
   - [ ] views - create an isometric view
   - [ ] untangle linked lines (HARD)
-
-### DONE
-
-- [x] if no children, then make single boxes stack vertically (overridable by [flexdirection])
