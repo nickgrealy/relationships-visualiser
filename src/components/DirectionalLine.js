@@ -11,7 +11,7 @@ const LINE_WIDTH = 1
  * @param {*} to - the element's id
  * @param {*} direction - in / out / both
  */
-export const DirectionalLine = ({ from, to, direction }) => {
+export const DirectionalLine = ({ from, to, direction = 'out' }) => {
   const offset = {
     startAnchor: { position: 'auto', offset: { bottomness: 4 } },
     endAnchor: { position: 'auto', offset: { bottomness: 4 } }
@@ -25,7 +25,7 @@ export const DirectionalLine = ({ from, to, direction }) => {
             headSize={0}
             path='straight'
             dashness={{ strokeLen: 10, nonStrokeLen: 3, animation: 1 }}
-            color={THEME.awsDarkTeal}
+            color={THEME.awsDarkRed}
             />
         <Xarrow
             start={to}
@@ -34,7 +34,7 @@ export const DirectionalLine = ({ from, to, direction }) => {
             headSize={0}
             path='straight'
             dashness={{ strokeLen: 10, nonStrokeLen: 3, animation: 1 }}
-            color={THEME.awsDarkTeal}
+            color={THEME.awsDarkRed}
             {...offset}
             />
         </React.Fragment>

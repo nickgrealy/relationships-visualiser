@@ -13,7 +13,8 @@ div[id=gatsby-focus-wrapper] {
     display:flex;
     flex-direction: row;
 }
-.editor {
-    background:ghostwhite;
-    width: 100%;
+.ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

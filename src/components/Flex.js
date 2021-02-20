@@ -9,7 +9,7 @@ import styled from 'styled-components'
  * <Flex className="growchild row col grow border" >...</Flex>
  */
 export const Flex = styled(({ className = '', innerRef = undefined, flex = '', ...props }) => {
-  console.debug('Flex', { flex, className, ...props })
+  // console.debug('Flex', { flex, className, ...props })
   return <div className={`${flex} ${className}`} ref={innerRef} {...props} />
 })`
   display: flex;

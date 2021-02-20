@@ -18,8 +18,8 @@ vertical-align: top;
 // main
 border-radius: ${THEME.radius};
 position:relative;
-padding: 10px;
-padding-top:40px;
+padding: 30px 0px 0px 0px;
+margin: 10px;
 min-width:200px;
 min-height: 20px;
 box-sizing: border-box;
@@ -65,33 +65,34 @@ background:white;
 
 // custom styles
 
-&.type-vpc {
-  border-color: ${THEME.awsGold};
-  min-width:800px;
-  > .title { 
-    border-color: ${THEME.awsGold};
-    background: linear-gradient(${THEME.awsGold}, ${THEME.awsDarkGold});
-    color: white;
-  }
-}
-&.type-machine {
-  margin-right:100px;
-  border-color: ${THEME.awsOrange};
-  > .title { 
-    border-color: ${THEME.awsOrange};
-    background: linear-gradient(${THEME.awsOrange}, ${THEME.awsDarkOrange});
-    color: white;
-  }
-}
+// &.type-vpc {
+//   border-color: ${THEME.awsGold};
+//   min-width:800px;
+//   > .title { 
+//     border-color: ${THEME.awsGold};
+//     background: linear-gradient(${THEME.awsGold}, ${THEME.awsDarkGold});
+//     color: white;
+//   }
+// }
+// &.type-machine {
+//   margin-right:100px;
+//   border-color: ${THEME.awsOrange};
+//   > .title { 
+//     border-color: ${THEME.awsOrange};
+//     background: linear-gradient(${THEME.awsOrange}, ${THEME.awsDarkOrange});
+//     color: white;
+//   }
+// }
 
 // store children vertically
 &.vertical-children {
   display:flex;
   flex-direction:column;
+  padding:40px 10px 10px 10px;
 }
 
 // stack elements vertically
-&.children-none {
+&.stack-vertically {
   padding:0px !important;
   border-radius:0px !important;
   > .title {
@@ -100,21 +101,13 @@ background:white;
     position:initial !important;
   }
   &:nth-child(n+2) {
-    margin-top:-1px;
+    margin:-1px 0 0 0;
   }
 }
 
 // custom styling
 // &.type-message-broker > .title {
 //   background: linear-gradient(${THEME.awsBlue}, ${THEME.awsDarkBlue});
-//   color:white;
-// }
-// &.type-container > .title {
-//   background: linear-gradient(${THEME.awsRed}, ${THEME.awsDarkRed});
-//   color:white;
-// }
-// &.type-database > .title {
-//   background: linear-gradient(${THEME.awsGreen}, ${THEME.awsDarkGreen});
 //   color:white;
 // }
 `
@@ -131,15 +124,17 @@ const DrawComp = React.memo(({ components = {}, comp = null, depth = 0, visibleT
   const isColumnLayout = columnLayoutTypes[comp.type]
   const children = MAP_BY_MEMBER_OF[comp.id] || []
   const doChildrenHaveChildren = children.some(child => (MAP_BY_MEMBER_OF[child.id] || []).length > 0)
-  console.log(comp.name, isColumnLayout)
+  const hasParent = depth > 0
+  const hasChildren = children.length > 0
+  // console.debug(comp.name, isColumnLayout)
   const isVerticalLayout = isDef(isColumnLayout) ? isColumnLayout : !doChildrenHaveChildren
+  const stackVertically = !hasChildren && hasParent
 
   const component = <Comp
     id={comp.id}
-    name={`${comp.name} (${comp.type})`}
-    className={`type-${comp.type} visible-${isVisible} ${children.length === 0 ? 'children-none' : ''} ${isVerticalLayout ? 'vertical-children' : ''} `}
+    className={`type-${comp.type} visible-${isVisible} ${stackVertically ? 'stack-vertically' : ''} ${isVerticalLayout ? 'vertical-children' : ''} `}
   >
-    <div className="title">{comp.name} ({comp.type})</div>
+    <div className="title">{comp.name}{comp.type ? ` (${comp.type})` : ''}</div>
     {/* draw child components */}
     { children.map(child => {
       return <DrawComp key={child.id} comp={child} depth={depth + 1} {...passDownProps} />
@@ -160,7 +155,7 @@ const DrawComp = React.memo(({ components = {}, comp = null, depth = 0, visibleT
  */
 const Stage = ({ components = {}, visibleTypes = {}, draggableTypes = {} }) => {
   const { LINKS = [], ROOT_LEVEL_COMPONENTS = [] } = components
-  const [rootLevelComponents] = React.useState(ROOT_LEVEL_COMPONENTS)
+  const [rootLevelComponents, setRootLevelComponents] = React.useState(ROOT_LEVEL_COMPONENTS)
   const [links, setLinks] = React.useState(LINKS)
 
   // a function to facilitate redrawing lines (e.g. when boxes are moved)
@@ -168,10 +163,9 @@ const Stage = ({ components = {}, visibleTypes = {}, draggableTypes = {} }) => {
     setLinks(x => ([...x]))
   }), [])
 
-  React.useEffect(() => {
-    console.log('LINKS COUNT', { prop: LINKS.length, state: links.length, LINKS })
-    setLinks(LINKS)
-  }, [LINKS])
+  // update state on changes...
+  React.useEffect(() => setLinks(LINKS), [LINKS])
+  React.useEffect(() => setRootLevelComponents(ROOT_LEVEL_COMPONENTS), [ROOT_LEVEL_COMPONENTS])
 
   // redraw the lines, if the window is resizes (e.g. if boxes are moved)
   // todo: redraw lines on scroll?
@@ -181,7 +175,7 @@ const Stage = ({ components = {}, visibleTypes = {}, draggableTypes = {} }) => {
   })
 
   return (
-    <Flex flex="growchild grow" style={{ padding: '30px', background: THEME.awsGreyBackground }}>
+    <Flex flex="growchild grow" style={{ padding: '15px', background: THEME.awsGreyBackground }}>
 
       {/* recursively draw components */}
       { rootLevelComponents.map(root => <DrawComp

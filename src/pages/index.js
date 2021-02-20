@@ -1,19 +1,16 @@
-import Editor from 'react-simple-code-editor'
-import { highlight, languages } from 'prismjs/components/prism-core'
-import 'prismjs/components/prism-clike'
-import 'prismjs/components/prism-javascript'
-import 'prismjs/components/prism-yaml'
+
 import * as React from 'react'
 import styled from 'styled-components'
+import { copyValuesIfExists, isDef } from '../common/utils'
 import Button from '../components/Button'
-import { rawYamlString, parseYaml } from '../components/ComponentDataYaml'
+import { parseYaml, rawYamlString } from '../components/ComponentDataYaml'
 import { Flex } from '../components/Flex'
 import Overlay from '../components/Overlay'
 import Stage from '../components/Stage'
+import THEME from '../components/Theme'
 import Window from '../components/Window'
+import YamlEditor from '../components/YamlEditor'
 import './style.css'
-import 'prismjs/themes/prism-coy.css'
-import { isDef } from '../common/utils'
 
 const Sidebar = styled(Flex)`
 width: 200px;
@@ -32,7 +29,7 @@ const ToggleButtons = ({ object, setObject }) => {
     const v = object[k]
     return <Button
         key={k}
-        className={`${v ? 'colour-orange' : ''} space-between`}
+        className={`ellipsis ${v ? 'colour-orange' : ''} space-between`}
         onClick={() => setObject({ ...object, [k]: !v })}>
           {k} {v ? <Tick /> : <Notick />}
       </Button>
@@ -46,68 +43,55 @@ const Title = styled.b`padding:15px 0px;`
  */
 const IndexPage = () => {
   const tmp = parseYaml(rawYamlString)
-  const [showPopup, setShowPopup] = React.useState(true)
+  const [showPopup, setShowPopup] = React.useState(false)
   const [rawYaml, setRawYaml] = React.useState(rawYamlString)
   const [components, setComponents] = React.useState(tmp)
+  const [errorMessage, setErrorMessage] = React.useState(false)
 
   const [visibleTypes, setVisibleTypes] = React.useState({})
   const [draggableTypes, setDraggableTypes] = React.useState({})
 
-  // copy previous values
+  // if components change, copy previous visible/draggable options...
   React.useEffect(() => {
-    setVisibleTypes(prev => {
-      const tmp = { ...components.MAP_TYPES_TRUE }
-      Object.keys(prev).forEach(k => {
-        if (isDef(tmp[k])) tmp[k] = prev[k]
-      })
-      return tmp
-    })
-    setDraggableTypes(prev => {
-      const tmp = { ...components.MAP_TYPES_FALSE }
-      Object.keys(prev).forEach(k => {
-        if (isDef(tmp[k])) tmp[k] = prev[k]
-      })
-      return tmp
-    })
+    setVisibleTypes(prev => copyValuesIfExists(prev, { ...components.MAP_TYPES_TRUE }))
+    setDraggableTypes(prev => copyValuesIfExists(prev, { ...components.MAP_TYPES_FALSE }))
   }, [components])
 
+  // if machine exists, make it draggable by default...
   React.useEffect(() => {
-    console.log(draggableTypes)
     if (draggableTypes.machine !== true) setDraggableTypes(t => ({ ...t, machine: true }))
   }, [])
 
   return <React.Fragment>
-      {/* popup */}
+      {/* popup window */}
       <Overlay flex="growchild" show={showPopup} setShowPopup={setShowPopup}>
-        <Window flex="grow" style={{ margin: '25vh 10vw 5vw 10vw' }}>
-          <Title>Edit Model</Title>
+        <Window flex="grow" style={{ margin: '45px 50vw 45px 45px' }}>
+        <Title>Edit Model</Title>
         <Flex flex="scroll-y">
           <div style={{ minHeight: '100px', width: '100%' }}>
-          <Editor
-            className="editor"
-            value={rawYaml}
-            onValueChange={code => {
-              console.log('code updated...')
-              setRawYaml(code)
-              setComponents(parseYaml(code))
-            }}
-            highlight={code => highlight(code, languages.yaml)}
-            padding={10}
-            style={{
-              fontFamily: '"Fira code", "Fira Mono", monospace',
-              fontSize: 12
-            }}
-          />
+            <YamlEditor
+              value={rawYaml}
+              onChange={code => {
+                // set raw yaml must be first, never block the text from updating@
+                setRawYaml(code)
+                try {
+                  setComponents(parseYaml(code))
+                  setErrorMessage(false)
+                } catch (err) {
+                  setErrorMessage(err.message)
+                }
+              }}
+            />
           </div>
-
         </Flex>
+        { errorMessage && <Title style={{ color: THEME.awsRed }}>Error: {errorMessage}</Title>}
         <Flex flex="center" style={{ marginTop: '15px' }}>
           <Button onClick={() => setShowPopup(false)}>Close window</Button>
         </Flex>
         </Window>
       </Overlay>
 
-      {/* window */}
+      {/* left sidebar */}
       <Flex flex="grow">
         <Sidebar>
           <Button onClick={() => setShowPopup(true)}>Edit Model</Button>

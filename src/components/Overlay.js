@@ -31,7 +31,7 @@ const Overlay = ({ show = false, setShowPopup = undefined, children = [], ...pro
 
   const hideOnBackdropClick = React.useCallback(e => {
     const isBackdropClick = e.target === backdropRef.current
-    console.debug('isBackdropClick=' + isBackdropClick, { target: e.target, backdropRef: backdropRef.current })
+    // console.debug('isBackdropClick=' + isBackdropClick, { target: e.target, backdropRef: backdropRef.current })
     if (isBackdropClick) setShowPopup(false)
   }, [backdropRef])
 
