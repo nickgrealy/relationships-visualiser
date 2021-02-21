@@ -1,15 +1,17 @@
 
 import * as React from 'react'
 import styled from 'styled-components'
-import { copyValuesIfExists, isDef } from '../common/utils'
+import { copyValuesIfExists } from '../common/utils'
 import Button from '../components/Button'
-import { parseYaml, rawYamlString } from '../components/ComponentDataYaml'
+import rawYamlString from '../common/SampleYamlString'
+import { parseYaml } from '../common/YamlPostProcessor'
 import { Flex } from '../components/Flex'
 import Overlay from '../components/Overlay'
 import Stage from '../components/Stage'
-import THEME from '../components/Theme'
+import THEME from '../common/Theme'
 import Window from '../components/Window'
 import YamlEditor from '../components/YamlEditor'
+import { list, save } from '../common/Storage'
 import './style.css'
 
 const Sidebar = styled(Flex)`
@@ -39,11 +41,70 @@ const ToggleButtons = ({ object, setObject }) => {
 const Title = styled.b`padding:15px 0px;`
 
 /**
+ * Shows a text editor for modifying the model in Yaml.
+ *
+ * @param {*} param0
+ */
+const EditorPopupWindow = ({ showEditorPopup, setShowEditorPopup, rawYaml, setRawYaml, setComponents, errorMessage, setErrorMessage }) => {
+  return <Overlay flex="growchild" show={showEditorPopup} setShowPopup={setShowEditorPopup}>
+    <Window flex="grow" style={{ margin: '45px 50vw 45px 45px' }}>
+    <Title>Edit Model</Title>
+    <Flex flex="scroll-y">
+      <div style={{ minHeight: '100px', width: '100%' }}>
+        <YamlEditor
+          value={rawYaml}
+          onChange={code => {
+            // set raw yaml must be first, never block the text from updating@
+            setRawYaml(code)
+            try {
+              const newComponents = parseYaml(code)
+              console.log(newComponents.root)
+              setComponents(newComponents)
+              setErrorMessage(false)
+              save(newComponents.root.name, code)
+            } catch (err) {
+              setErrorMessage(err.message)
+            }
+          }}
+        />
+      </div>
+    </Flex>
+    { errorMessage && <Title style={{ color: THEME.awsRed }}>Error: {errorMessage}</Title>}
+    <Flex flex="center" style={{ marginTop: '15px' }}>
+      <Button onClick={() => setShowEditorPopup(false)}>Close window</Button>
+    </Flex>
+    </Window>
+  </Overlay>
+}
+
+/**
+ * Shows a list of saved - allows loading from the list..
+ *
+ * @param {*} param0
+ */
+const LoadPopupWindow = ({ showLoadPopup, setShowLoadPopup, setComponents, errorMessage, setErrorMessage }) => {
+  return <Overlay flex="growchild" show={showLoadPopup} setShowPopup={setShowLoadPopup}>
+    <Window flex="grow" style={{ margin: '45px 50vw 45px 45px' }}>
+    <Title>Load Model</Title>
+    <Flex flex="scroll-y">
+      <div style={{ minHeight: '100px', width: '100%' }}>
+        { list().map(key => <div key={key}>{key}</div>)}
+      </div>
+    </Flex>
+    <Flex flex="center" style={{ marginTop: '15px' }}>
+      <Button onClick={() => setShowLoadPopup(false)}>Load selected model</Button>
+    </Flex>
+    </Window>
+  </Overlay>
+}
+
+/**
  * Creates the landing page.
  */
 const IndexPage = () => {
   const tmp = parseYaml(rawYamlString)
-  const [showPopup, setShowPopup] = React.useState(false)
+  const [showEditorPopup, setShowEditorPopup] = React.useState(false)
+  const [showLoadPopup, setShowLoadPopup] = React.useState(false)
   const [rawYaml, setRawYaml] = React.useState(rawYamlString)
   const [components, setComponents] = React.useState(tmp)
   const [errorMessage, setErrorMessage] = React.useState(false)
@@ -63,38 +124,17 @@ const IndexPage = () => {
   }, [])
 
   return <React.Fragment>
-      {/* popup window */}
-      <Overlay flex="growchild" show={showPopup} setShowPopup={setShowPopup}>
-        <Window flex="grow" style={{ margin: '45px 50vw 45px 45px' }}>
-        <Title>Edit Model</Title>
-        <Flex flex="scroll-y">
-          <div style={{ minHeight: '100px', width: '100%' }}>
-            <YamlEditor
-              value={rawYaml}
-              onChange={code => {
-                // set raw yaml must be first, never block the text from updating@
-                setRawYaml(code)
-                try {
-                  setComponents(parseYaml(code))
-                  setErrorMessage(false)
-                } catch (err) {
-                  setErrorMessage(err.message)
-                }
-              }}
-            />
-          </div>
-        </Flex>
-        { errorMessage && <Title style={{ color: THEME.awsRed }}>Error: {errorMessage}</Title>}
-        <Flex flex="center" style={{ marginTop: '15px' }}>
-          <Button onClick={() => setShowPopup(false)}>Close window</Button>
-        </Flex>
-        </Window>
-      </Overlay>
+      {/* editor popup window */}
+      <EditorPopupWindow {...{ showEditorPopup, setShowEditorPopup, rawYaml, setRawYaml, setComponents, errorMessage, setErrorMessage }} />
+
+      {/* load popup window */}
+      <LoadPopupWindow {...{ showLoadPopup, setShowLoadPopup, rawYaml, setRawYaml, setComponents, errorMessage, setErrorMessage }} />
 
       {/* left sidebar */}
       <Flex flex="grow">
         <Sidebar>
-          <Button onClick={() => setShowPopup(true)}>Edit Model</Button>
+          <Button onClick={() => setShowEditorPopup(true)}>Edit Model</Button>
+          <Button onClick={() => setShowLoadPopup(true)}>Load Model</Button>
           <Title>Toggle Visibility</Title>
           <ToggleButtons object={visibleTypes} setObject={setVisibleTypes} />
           <Title>Toggle Draggable</Title>

@@ -1,4 +1,6 @@
 
+export const isArray = o => Array.isArray(o)
+export const isString = o => typeof o === 'string'
 export const isUndef = o => typeof o === 'undefined'
 export const isNull = o => o === null
 export const isDef = o => typeof o !== 'undefined'

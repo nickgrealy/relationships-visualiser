@@ -1,6 +1,6 @@
 import * as React from 'react'
 import Xarrow from 'react-xarrows'
-import THEME from './Theme'
+import THEME from '../common/Theme'
 
 const LINE_WIDTH = 1
 

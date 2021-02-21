@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import THEME from './Theme'
+import THEME from '../common/Theme'
 
 /**
  * The base class for all buttons.

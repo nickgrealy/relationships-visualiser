@@ -33,14 +33,13 @@ Yes, and...
   - [x] added validation on yaml and business structure
   - [x] support "cut down" components (e.g. just 'id')
   - [ ] save/load model from local storage 
-  - [ ] add a 'type' to links (why? colour? show text?)
 
 - Customisation
   - [ ] assign random colours
   - [ ] assign user chosen colours
   - [ ] custom backgrounds e.g. maps, to show geographical location
   - [ ] custom icons
-  - [ ] make it a table [type] [toggleView] [toggleDraggable] [flexdirection] [colour] [count]
+  - [ ] make it a table [type] [toggleView] [toggleDraggable] [flexdirection] [fullWidth] [colour] [count]
   - [ ] store configuration (local storage?)
   
 - Named Views
@@ -71,3 +70,4 @@ Yes, and...
   - [ ] lines - link to left/right sides of boxes only (not top/bottom)
   - [ ] views - create an isometric view
   - [ ] untangle linked lines (HARD)
+  - [ ] add a 'type' to links (why? colour? show text?)

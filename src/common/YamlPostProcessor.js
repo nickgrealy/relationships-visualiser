@@ -1,143 +1,12 @@
 const yaml = require('js-yaml')
-const { isDef, isUndef, isNotPresent } = require('../common/utils')
-
-const rawYamlString = `
-# other types: load_balancer, cluster, vpc, etc
-
-components:
-  - type: vpc
-    id: vpc1.domain.au
-    name: VPC1
-    children:
-    - type: machine
-      id: server3
-      name: DigitalOcean Droplet #2
-      children:
-      - type: service
-        name: Docker
-        id: web_services_2
-        children:
-        - type: container
-          name: Case Management #2
-          id: ws.casemgmt2
-          links:
-            - to: bau.create_case
-              direction: out
-        
-  # --- Web Services ---
-
-  - type: machine
-    id: server1.domain.au
-    name: DigitalOcean Droplet
-    memberOf:
-      - vpc1.domain.au
-
-  - type: service
-    name: Docker
-    id: web_services
-    memberOf:
-      - server1.domain.au
-
-  - type: container
-    name: Case Management
-    id: ws.casemgmt
-    memberOf:
-      - web_services
-    links:
-      - to: bau.create_case
-        direction: out
-      - to: bau.create_case_resp
-        direction: in
-      - to: bau.case_completed
-        direction: both
-      - to: mongo.onepass.cases
-        direction: out
-      - to: mongo.onepass.forms
-        direction: out
-
-  - type: container
-    name: Auth Module
-    id: ws.accessctrl
-    memberOf:
-      - web_services
-    links:
-      - to: bau.create_case
-        direction: out
-      - to: mongo.onepass.users
-        direction: out
-
-  # --- MQ ---
-
-  - type: machine
-    name: AWS EC2
-    id: server2.domain.au
-    memberOf:
-      - vpc1.domain.au
-
-  - type: message-broker
-    name: MQ Server
-    id: mq1.domain.au
-    memberOf:
-      - server2.domain.au
-
-  - type: queue
-    name: bau.create_case
-    id: bau.create_case
-    memberOf:
-      - mq1.domain.au
-
-  - type: queue
-    name: bau.create_case_resp
-    id: bau.create_case_resp
-    memberOf:
-      - mq1.domain.au
-
-  - type: queue
-    name: bau.case_completed
-    id: bau.case_completed
-    memberOf:
-      - mq1.domain.au
-
-  # --- Database ---
-
-  - type: machine
-    name: Atlas MongoDb
-    id: mongo-cluster-123.mongodb.com
-    memberOf:
-      - vpc1.domain.au
-
-  - type: database
-    name: onepass
-    id: mongo.onepass
-    memberOf:
-      - mongo-cluster-123.mongodb.com
-
-  - type: collection
-    name: users
-    id: mongo.onepass.users
-    memberOf:
-      - mongo.onepass
-
-  - type: collection
-    name: cases
-    id: mongo.onepass.cases
-    memberOf:
-      - mongo.onepass
-
-  - type: collection
-    name: forms
-    id: mongo.onepass.forms
-    memberOf:
-      - mongo.onepass
-`
+const { isDef, isUndef, isNotPresent, isString, isArray } = require('./utils')
 
 /**
+ * Parses and validates a Yaml string.
  *
  * @param {*} ymlString
  */
 const parseYaml = ymlString => {
-  const jsonComponents = yaml.load(ymlString)
-
   const ROOT_LEVEL_COMPONENTS = []
   const LINKS = []
   const MAP_BY_MEMBER_OF = {}
@@ -167,8 +36,8 @@ const parseYaml = ymlString => {
     // pre-process verification checks...
 
     // verify id is valid...
-    if (typeof id === 'undefined') throw new Error(`Component must have an 'id' field - '${JSON.stringify(component)}'`)
-    if (typeof id !== 'string') throw new Error(`'id' must be a string - '${id}'`)
+    if (typeof id === 'undefined') throw new Error(`'id' field missing - '${JSON.stringify(component)}'`)
+    if (typeof id !== 'string') throw new Error(`'id' field must be a string - '${id}'`)
 
     // verify parentIds are valid...
     parentIds.forEach(parentId => {
@@ -225,11 +94,19 @@ const parseYaml = ymlString => {
     })
   }
 
+  // parse yaml...
+  const root = yaml.load(ymlString)
+
   // pre-pre-checks...
-  if (isNotPresent(jsonComponents) || !Array.isArray(jsonComponents.components)) throw new Error('Root element must be a \'components:\' of type array.')
+  if (isNotPresent(root)) throw new Error('Root element must not be empty - required fields => \'name\', \'components\'.')
+  const { name, components } = root
+  if (isUndef(name)) throw new Error(`Root \'name\' field missing - ${JSON.stringify({ root, ymlString })}`)
+  if (isUndef(components)) throw new Error('Root \'components\' field missing')
+  if (!isString(name)) throw new Error(`Root 'name' field must be a string - '${name}'`)
+  if (!isArray(components)) throw new Error('Root \'components\' element must be an array.')
 
   // start processing the components...
-  jsonComponents.components.forEach(component => recursivelyProcessComponents(component))
+  components.forEach(component => recursivelyProcessComponents(component))
 
   // post process checks...
   LINKS.forEach(({ to }) => {
@@ -240,6 +117,7 @@ const parseYaml = ymlString => {
   })
 
   const response = {
+    root,
     ROOT_LEVEL_COMPONENTS,
     LINKS,
     MAP_BY_MEMBER_OF,
@@ -249,12 +127,9 @@ const parseYaml = ymlString => {
     UNIQUE_IDS
   }
 
-  console.debug('got here 6', response)
-
   return response
 }
 
 module.exports = {
-  rawYamlString,
   parseYaml
 }
