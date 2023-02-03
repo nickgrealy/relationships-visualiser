@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "babel-plugin-styled-components": "1.12.0",
-    "gatsby": "2.32.3",
+    "gatsby": "5.5.0",
     "gatsby-plugin-styled-components": "3.10.0",
     "js-yaml": "4.0.0",
     "prismjs": "1.23.0",
